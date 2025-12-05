@@ -11,4 +11,13 @@ jobs:
     steps:
       - name: Trigger Firebase notification
         run: |
-          curl "https://us-central1-benestarpwa.cloudfunctions.net/sendNotification?title=💚+Benestar&body=It’s+time+for+your+wellbeing+check"
+          curl -X POST "https://fcm.googleapis.com/fcm/send" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: key=${{ secrets.FCM_SERVER_KEY }}" \
+            -d '{
+              "to": "/topics/all",
+              "notification": {
+                "title": "💚 Benestar",
+                "body": "It’s time for your wellbeing check"
+              }
+            }'
