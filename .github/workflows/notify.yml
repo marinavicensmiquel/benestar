@@ -11,10 +11,9 @@ jobs:
     steps:
       - name: Generate OAuth access token
         id: generate_token
-        shell: bash
         run: |
           echo "${{ secrets.FCM_SERVICE_KEY }}" > key.json
-          ACCESS_TOKEN=$(python3 - <<'EOF'
+          python3 - <<'PY'
 import json, time, jwt, requests
 key = json.load(open("key.json"))
 now = int(time.time())
@@ -25,22 +24,22 @@ payload = {
   "iat": now,
   "exp": now + 3600
 }
-import requests
 jwt_token = jwt.encode(payload, key["private_key"], algorithm="RS256")
-resp = requests.post("https://oauth2.googleapis.com/token", data={
+r = requests.post("https://oauth2.googleapis.com/token", data={
   "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
   "assertion": jwt_token
 })
-print(resp.json()["access_token"])
-EOF
-)
-          echo "token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+token = r.json()["access_token"]
+print(token)
+with open("access_token.txt", "w") as f: f.write(token)
+PY
+          echo "token=$(cat access_token.txt)" >> $GITHUB_OUTPUT
 
       - name: Send Benestar notification
-        shell: bash
         run: |
+          TOKEN=${{ steps.generate_token.outputs.token }}
           curl -X POST "https://fcm.googleapis.com/v1/projects/benestarpwa/messages:send" \
-            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json; UTF-8" \
             -d '{
               "message": {
