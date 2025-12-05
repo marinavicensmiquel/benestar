@@ -13,25 +13,7 @@ jobs:
         id: generate_token
         run: |
           echo "${{ secrets.FCM_SERVICE_KEY }}" > key.json
-          cat <<EOF > gen_token.py
-import json, time, jwt, requests
-key = json.load(open("key.json"))
-now = int(time.time())
-payload = {
-  "iss": key["client_email"],
-  "scope": "https://www.googleapis.com/auth/firebase.messaging",
-  "aud": key["token_uri"],
-  "iat": now,
-  "exp": now + 3600
-}
-jwt_token = jwt.encode(payload, key["private_key"], algorithm="RS256")
-r = requests.post("https://oauth2.googleapis.com/token", data={
-  "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-  "assertion": jwt_token
-})
-token = r.json()["access_token"]
-open("access_token.txt","w").write(token)
-EOF
+          echo "import json, time, jwt, requests; k=json.load(open('key.json')); n=int(time.time()); p={'iss':k['client_email'],'scope':'https://www.googleapis.com/auth/firebase.messaging','aud':k['token_uri'],'iat':n,'exp':n+3600}; j=jwt.encode(p,k['private_key'],'RS256'); r=requests.post('https://oauth2.googleapis.com/token',data={'grant_type':'urn:ietf:params:oauth:grant-type:jwt-bearer','assertion':j}); open('access_token.txt','w').write(r.json()['access_token'])" > gen_token.py
           python3 gen_token.py
           echo "token=$(cat access_token.txt)" >> $GITHUB_OUTPUT
 
