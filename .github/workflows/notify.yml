@@ -16,8 +16,8 @@ jobs:
           ACCESS_TOKEN=$(curl -s -X POST \
             -H "Content-Type: application/x-www-form-urlencoded" \
             -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=$(python3 - <<'EOF'
-import json, time, jwt, sys
-key = json.load(open('key.json'))
+import json, time, jwt
+key = json.load(open("key.json"))
 now = int(time.time())
 payload = {
   "iss": key["client_email"],
