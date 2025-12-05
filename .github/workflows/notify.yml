@@ -2,8 +2,8 @@ name: Send Benestar notifications
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # every 5 minutes
-  workflow_dispatch:        # allows manual trigger
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 jobs:
   send:
@@ -11,12 +11,11 @@ jobs:
     steps:
       - name: Generate OAuth access token
         id: generate_token
+        shell: bash
         run: |
           echo "${{ secrets.FCM_SERVICE_KEY }}" > key.json
-          ACCESS_TOKEN=$(curl -s -X POST \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=$(python3 - <<'EOF'
-import json, time, jwt
+          ACCESS_TOKEN=$(python3 - <<'EOF'
+import json, time, jwt, requests
 key = json.load(open("key.json"))
 now = int(time.time())
 payload = {
@@ -24,14 +23,21 @@ payload = {
   "scope": "https://www.googleapis.com/auth/firebase.messaging",
   "aud": key["token_uri"],
   "iat": now,
-  "exp": now + 3600,
+  "exp": now + 3600
 }
-print(jwt.encode(payload, key["private_key"], algorithm="RS256"))
+import requests
+jwt_token = jwt.encode(payload, key["private_key"], algorithm="RS256")
+resp = requests.post("https://oauth2.googleapis.com/token", data={
+  "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+  "assertion": jwt_token
+})
+print(resp.json()["access_token"])
 EOF
-)" https://oauth2.googleapis.com/token | jq -r '.access_token')
+)
           echo "token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
       - name: Send Benestar notification
+        shell: bash
         run: |
           curl -X POST "https://fcm.googleapis.com/v1/projects/benestarpwa/messages:send" \
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
