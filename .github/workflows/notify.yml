@@ -9,10 +9,34 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Firebase notification
+      - name: Generate OAuth access token
+        id: generate_token
+        run: |
+          echo "${{ secrets.FCM_SERVICE_KEY }}" > key.json
+
+          ACCESS_TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=$(python3 - <<'EOF'
+import json, time, jwt, sys
+key = json.load(open('key.json'))
+now = int(time.time())
+payload = {
+  "iss": key["client_email"],
+  "scope": "https://www.googleapis.com/auth/firebase.messaging",
+  "aud": key["token_uri"],
+  "iat": now,
+  "exp": now + 3600,
+}
+print(jwt.encode(payload, key["private_key"], algorithm="RS256"))
+EOF
+)" https://oauth2.googleapis.com/token | jq -r '.access_token')
+
+          echo "token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Send Benestar notification
         run: |
           curl -X POST "https://fcm.googleapis.com/v1/projects/benestarpwa/messages:send" \
-            -H "Authorization: Bearer ${{ secrets.FCM_ACCESS_TOKEN }}" \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
             -H "Content-Type: application/json; UTF-8" \
             -d '{
               "message": {
