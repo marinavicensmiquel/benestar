@@ -13,7 +13,7 @@ jobs:
         id: generate_token
         run: |
           echo "${{ secrets.FCM_SERVICE_KEY }}" > key.json
-          python3 - <<'PY'
+          cat <<EOF > gen_token.py
 import json, time, jwt, requests
 key = json.load(open("key.json"))
 now = int(time.time())
@@ -30,9 +30,9 @@ r = requests.post("https://oauth2.googleapis.com/token", data={
   "assertion": jwt_token
 })
 token = r.json()["access_token"]
-print(token)
-with open("access_token.txt", "w") as f: f.write(token)
-PY
+open("access_token.txt","w").write(token)
+EOF
+          python3 gen_token.py
           echo "token=$(cat access_token.txt)" >> $GITHUB_OUTPUT
 
       - name: Send Benestar notification
