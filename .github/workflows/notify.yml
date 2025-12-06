@@ -14,7 +14,7 @@ jobs:
         shell: bash
         run: |
           echo '${{ secrets.FCM_SERVICE_KEY }}' > key.json
-          cat <<EOF > gen_token.py
+          bash -c 'cat > gen_token.py << "PYCODE"
 import json, time, jwt, requests
 with open("key.json") as f:
     key = json.load(f)
@@ -36,7 +36,7 @@ r = requests.post(
 )
 token = r.json()["access_token"]
 open("access_token.txt", "w").write(token)
-EOF
+PYCODE'
           python3 gen_token.py
           echo "token=$(cat access_token.txt)" >> $GITHUB_OUTPUT
 
