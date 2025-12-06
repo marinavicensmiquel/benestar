@@ -169,6 +169,7 @@
     <button class="menu-btn" id="btnPau">Pau</button>
     <label for="freqSelect">Frequència</label>
     <select id="freqSelect">
+      <option value="1">1 min</option>
       <option value="5">5 min</option>
       <option value="10">10 min</option>
       <option value="30">30 min</option>
@@ -283,7 +284,7 @@
       if (Notification.permission !== "granted") return;
 
       try {
-        new Notification("💫 Benestar", {
+        new Notification("💫 Benestar 🌿", {  // 👈 small change here
           body: msg,
           icon: "icon-192.png"
         });
@@ -292,16 +293,6 @@
       }
     }
 
-
-    // Notifications
-    async function showNotification() {
-      if (Notification.permission !== "granted") return;
-      const msg = messages[currentTheme][currentIndex];
-      new Notification("💫 Benestar", {
-        body: msg,
-        icon: "icon-192.png"
-      });
-    }
 
     // First-time permission request
     window.addEventListener("load", async () => {
