@@ -11,9 +11,10 @@ jobs:
     steps:
       - name: Generate OAuth access token
         id: generate_token
+        shell: bash
         run: |
           echo '${{ secrets.FCM_SERVICE_KEY }}' > key.json
-          python3 <<'EOF'
+          cat <<EOF > gen_token.py
 import json, time, jwt, requests
 with open("key.json") as f:
     key = json.load(f)
@@ -36,6 +37,7 @@ r = requests.post(
 token = r.json()["access_token"]
 open("access_token.txt", "w").write(token)
 EOF
+          python3 gen_token.py
           echo "token=$(cat access_token.txt)" >> $GITHUB_OUTPUT
 
       - name: Send Benestar notification
