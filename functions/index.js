@@ -18,12 +18,20 @@ exports.subscribeToAll = functions.https.onRequest(async (req, res) => {
 
 // ✅ Existing endpoint — sends notification to all subscribed tokens
 exports.sendNotification = functions.https.onRequest(async (req, res) => {
-  const { title = "Benestar Reminder", body = "It’s time for your wellbeing check 🌿" } = req.query;
+  const { title = "Benestar Reminder", body = "It’s time for your wellbeing check 🌿", icon = "icon-192.png" } = req.body || {};
+
   try {
     await admin.messaging().send({
       topic: "all",
-      notification: { title, body, icon: "icon-192.png" },
+      notification: { title, body },
+      webpush: {
+        notification: { icon },
+      },
+      android: {
+        notification: { icon },
+      },
     });
+
     console.log(`🚀 Notification sent: ${title}`);
     res.json({ success: true });
   } catch (error) {
