@@ -4,19 +4,15 @@ admin.initializeApp();
 
 // ✅ Securely subscribe a client token to the topic "all"
 exports.subscribeToAll = functions.https.onRequest(async (req, res) => {
-  const { token } = req.query;
-
-  if (!token) {
-    return res.status(400).json({ success: false, error: "Missing token" });
-  }
+  const token = req.query.token;
+  if (!token) return res.status(400).json({ success: false, error: "Missing token" });
 
   try {
     await admin.messaging().subscribeToTopic(token, "all");
-    console.log(`🔗 Token subscribed to 'all'`);
     res.json({ success: true, message: "Subscribed to topic 'all'" });
-  } catch (error) {
-    console.error("❌ Subscription error:", error);
-    res.status(500).json({ success: false, error: error.message });
+  } catch (err) {
+    console.error("❌ Error subscribing to topic:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
