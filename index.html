@@ -201,32 +201,41 @@
     // === Initialize Firebase ===
     firebase.initializeApp(firebaseConfig);
 
-    // === Register service worker and then initialize messaging ===
+    // === Register service worker and initialize messaging ===
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("./firebase-messaging-sw.js", { scope: "./" })
+        .register("/firebase-messaging-sw.js") // ✅ absolute root path for Firebase Hosting
         .then(async (registration) => {
           console.log("✅ Service Worker registered:", registration);
 
-          // Attach messaging to this SW
           const messaging = firebase.messaging();
           messaging.useServiceWorker(registration);
 
-          // Ask for notification permission after registration
+          // Ask for permission once after registration
           if (Notification.permission === "default") {
-            const permission = await Notification.requestPermission();
-            console.log("🔔 Notification permission:", permission);
-            if (permission === "granted") {
-              const token = await messaging.getToken({
-                vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
-              });
-              console.log("✅ FCM token:", token);
-              // Optionally send it to your backend
+            try {
+              const permission = await Notification.requestPermission();
+              console.log("🔔 Notification permission:", permission);
+
+              if (permission === "granted") {
+                const token = await messaging.getToken({
+                  vapidKey:
+                    "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s",
+                  serviceWorkerRegistration: registration
+                });
+                console.log("✅ FCM token:", token);
+                // Optionally send it to your backend here
+              }
+            } catch (err) {
+              console.error("❌ Permission request failed:", err);
             }
+          } else {
+            console.log("🔔 Notification permission already set:", Notification.permission);
           }
         })
-        .catch((err) => console.error("❌ Service Worker failed to register:", err));
+        .catch((err) => console.error("❌ Service Worker registration failed:", err));
     }
+
 
 
     // Messages per theme
