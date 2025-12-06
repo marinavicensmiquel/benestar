@@ -13,7 +13,7 @@ jobs:
         id: generate_token
         run: |
           echo '${{ secrets.FCM_SERVICE_KEY }}' > key.json
-          python3 - <<'EOF'
+          python3 <<'EOF'
 import json, time, jwt, requests
 with open("key.json") as f:
     key = json.load(f)
