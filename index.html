@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Benestar 💫</title>
 
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
+  <script src="/firebase-app.js"></script>
+  <script src="/firebase-messaging.js"></script>
+  <script src="/main.js"></script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Benestar">
   <link rel="apple-touch-icon" href="icon-192.png">
+
+  <meta name="theme-color" content="#6ad76a">
+  <script>
+    // Redirect if accidentally opened from GitHub Pages or a local file
+    if (!location.hostname.includes("benestarpwa.web.app")) {
+      location.href = "https://benestarpwa.web.app";
+    }
+  </script>
 
   <style>
     body {
