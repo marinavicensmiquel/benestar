@@ -208,7 +208,7 @@
     // Messages per theme
     const messages = {
       benestar: [
-        "M’estim", "M’estimem", "Som una afortunada de la vida",
+        "M’estim", "M’estimen", "Som una afortunada de la vida",
         "Som agraïda", "Som feliç", "Som lliure"
       ],
       forca: [
@@ -260,11 +260,38 @@
 
     function restartLoop() {
       if (intervalId) clearInterval(intervalId);
+
+      // Immediately sync display and notification
+      updateMessage(true);
+
       intervalId = setInterval(() => {
-        updateMessage();
-        showNotification();
+        updateMessage(true);
       }, intervalMinutes * 60 * 1000);
     }
+
+    // Update message (and optionally trigger notification)
+    function updateMessage(triggerNotification = false) {
+      const msgs = messages[currentTheme];
+      messageEl.textContent = msgs[currentIndex];
+      currentIndex = (currentIndex + 1) % msgs.length;
+
+      if (triggerNotification) showNotification(msgs[(currentIndex - 1 + msgs.length) % msgs.length]);
+    }
+
+    // Notifications
+    async function showNotification(msg) {
+      if (Notification.permission !== "granted") return;
+
+      try {
+        new Notification("💫 Benestar", {
+          body: msg,
+          icon: "icon-192.png"
+        });
+      } catch (err) {
+        console.error("Notification error:", err);
+      }
+    }
+
 
     // Notifications
     async function showNotification() {
