@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ca">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Benestar – Push Notifications</title>
+  <title>Benestar 💫</title>
 
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,90 +11,217 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #fafafa; }
-    h2 { color: #4CAF50; }
-    button {
-      font-size: 18px; 
-      padding: 12px 20px;
-      border-radius: 8px;
-      background: #4CAF50;
-      color: white;
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+      color: #222;
+      background: url("images/background.png") center/cover no-repeat fixed;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+    }
+
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 0 0 15px 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      backdrop-filter: blur(6px);
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 10;
+    }
+
+    .menu-btn {
+      font-size: 1rem;
+      padding: 8px 14px;
       border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      color: #333;
+    }
+    .menu-btn.active {
+      font-weight: bold;
+      color: #2e7d32;
+      background-color: rgba(46,125,50,0.1);
+    }
+
+    select {
+      font-size: 0.9rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      background-color: white;
       cursor: pointer;
     }
-    pre { white-space: pre-wrap; background: #fff; padding: 10px; border: 1px solid #ccc; height: 250px; overflow-y: auto; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 70px;
+    }
+
+    h2 {
+      font-size: 2em;
+      color: #2e7d32;
+      margin-bottom: 0.5em;
+    }
+
+    footer {
+      padding-bottom: 30px;
+      color: #444;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 
 <body>
-  <h2>🔔 Benestar – Push Notifications</h2>
-  <p>Receive automatic wellbeing reminders, even when the app is closed.</p>
+  <header>
+    <button class="menu-btn active" id="btnBenestar">Benestar</button>
+    <button class="menu-btn" id="btnForca">Força</button>
+    <button class="menu-btn" id="btnPau">Pau</button>
+    <label for="freqSelect">Frequència:</label>
+    <select id="freqSelect">
+      <option value="10">10 min</option>
+      <option value="30">30 min</option>
+      <option value="60">1 h</option>
+      <option value="120">2 h</option>
+      <option value="180">3 h</option>
+      <option value="360">6 h</option>
+      <option value="720">12 h</option>
+    </select>
+  </header>
 
-  <button onclick="requestPermission()">Activate Notifications</button>
-  <pre id="log">📋 Log:\n</pre>
+  <main>
+    <h2 id="message">M’estim</h2>
+  </main>
 
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js"></script>
 
   <script>
-  const log = (msg) => {
-    console.log(msg);
-    document.getElementById("log").textContent += "\n" + msg;
-  };
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyARM97493F50pd_QXhR6vRKIn897Q9yKQc",
+      authDomain: "benestarpwa.firebaseapp.com",
+      projectId: "benestarpwa",
+      storageBucket: "benestarpwa.appspot.com",
+      messagingSenderId: "487141570676",
+      appId: "1:487141570676:web:83af17edc0d0d0b6b5b921"
+    };
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyARM97493F50pd_QXhR6vRKIn897Q9yKQc",
-    authDomain: "benestarpwa.firebaseapp.com",
-    projectId: "benestarpwa",
-    storageBucket: "benestarpwa.appspot.com",
-    messagingSenderId: "487141570676",
-    appId: "1:487141570676:web:83af17edc0d0d0b6b5b921"
-  };
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
 
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
-
-  // Register Firebase service worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("./firebase-messaging-sw.js", { scope: "./" })
-      .then((reg) => log("🧩 Service Worker registered: " + reg.scope))
-      .catch((err) => log("❌ SW registration failed: " + err));
-  }
-
-  async function requestPermission() {
-    log("📨 Requesting notification permission...");
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      log("⚠️ Permission denied.");
-      return;
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
     }
 
-    try {
-      const token = await messaging.getToken({
-        vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
-      });
-      log("✅ Token obtained:\n" + token);
+    // Messages per theme
+    const messages = {
+      benestar: [
+        "M’estim", "M’estimem", "Som una afortunada de la vida",
+        "Som agraïda", "Som feliç", "Som lliure"
+      ],
+      forca: [
+        "Confia en la vida", "Confia en el procés", "Tot du el seu temps",
+        "Vas fent passes", "Vas progressant", "Vas avançant"
+      ],
+      pau: [
+        "Creu en el camí", "Ho estàs fent molt bé", "Respira",
+        "El progrés es fa caminant", "Vas bé", "Paciència"
+      ]
+    };
 
-      // Securely subscribe token to "all" via your backend (no API key in frontend)
-      const res = await fetch(`https://us-central1-benestarpwa.cloudfunctions.net/subscribeToAll?token=${token}`);
-      const data = await res.json();
-      log("📡 Subscription response: " + JSON.stringify(data));
+    let currentTheme = "benestar";
+    let currentIndex = 0;
+    let intervalMinutes = 10;
+    let intervalId = null;
 
-      alert("✅ Notifications activated! You’ll now receive reminders.");
-    } catch (err) {
-      log("❌ Token error: " + err.message);
-    }
-  }
+    const messageEl = document.getElementById("message");
+    const freqSelect = document.getElementById("freqSelect");
 
-  messaging.onMessage((payload) => {
-    log("📩 Notification received: " + JSON.stringify(payload));
-    new Notification(payload.notification.title, {
-      body: payload.notification.body,
-      icon: payload.notification.icon || "icon-192.png",
+    // Button handlers
+    document.getElementById("btnBenestar").onclick = () => setTheme("benestar");
+    document.getElementById("btnForca").onclick = () => setTheme("forca");
+    document.getElementById("btnPau").onclick = () => setTheme("pau");
+
+    freqSelect.addEventListener("change", () => {
+      intervalMinutes = parseInt(freqSelect.value);
+      restartLoop();
     });
-  });
-</script>
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      currentIndex = 0;
+      document.querySelectorAll(".menu-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("btn" + capitalize(theme)).classList.add("active");
+      updateMessage();
+      restartLoop();
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function updateMessage() {
+      const msgs = messages[currentTheme];
+      messageEl.textContent = msgs[currentIndex];
+      currentIndex = (currentIndex + 1) % msgs.length;
+    }
+
+    function restartLoop() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        updateMessage();
+        showNotification();
+      }, intervalMinutes * 60 * 1000);
+    }
+
+    // Notifications
+    async function showNotification() {
+      if (Notification.permission !== "granted") return;
+      const msg = messages[currentTheme][currentIndex];
+      new Notification("💫 Benestar", {
+        body: msg,
+        icon: "icon-192.png"
+      });
+    }
+
+    // First-time permission request
+    window.addEventListener("load", async () => {
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          const token = await messaging.getToken({
+            vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
+          });
+          await fetch(`https://us-central1-benestarpwa.cloudfunctions.net/subscribeToAll?token=${token}`);
+        }
+      }
+      updateMessage();
+      restartLoop();
+    });
+
+    messaging.onMessage((payload) => {
+      showNotification();
+    });
+  </script>
 </body>
 </html>
+
+
