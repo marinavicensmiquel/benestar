@@ -341,6 +341,57 @@
     window.addEventListener("resize", adjustLayout);
   </script>
 
+  <script>
+    // Swipe navigation setup
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    // Detect touch start
+    document.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    // Detect touch end and direction
+    document.addEventListener("touchend", (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipeGesture();
+    });
+
+    function handleSwipeGesture() {
+      const swipeThreshold = 50; // Minimum distance in px to count as swipe
+      const diff = touchEndX - touchStartX;
+
+      if (Math.abs(diff) < swipeThreshold) return; // Ignore small touches
+
+      if (diff > 0) {
+        // Swipe right → previous message
+        showPreviousMessage();
+      } else {
+        // Swipe left → next message
+        showNextMessage();
+      }
+    }
+
+    // Keyboard support for desktop users
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") showNextMessage();
+      if (e.key === "ArrowLeft") showPreviousMessage();
+    });
+
+    function showNextMessage() {
+      const msgs = messages[currentTheme];
+      currentIndex = (currentIndex + 1) % msgs.length;
+      messageEl.textContent = msgs[currentIndex];
+    }
+
+    function showPreviousMessage() {
+      const msgs = messages[currentTheme];
+      currentIndex = (currentIndex - 1 + msgs.length) % msgs.length;
+      messageEl.textContent = msgs[currentIndex];
+    }
+  </script>
+
+
 </body>
 </html>
 
