@@ -198,12 +198,36 @@
       appId: "1:487141570676:web:83af17edc0d0d0b6b5b921"
     };
 
+    // === Initialize Firebase ===
     firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
 
+    // === Register service worker and then initialize messaging ===
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
+      navigator.serviceWorker
+        .register("./firebase-messaging-sw.js", { scope: "./" })
+        .then(async (registration) => {
+          console.log("✅ Service Worker registered:", registration);
+
+          // Attach messaging to this SW
+          const messaging = firebase.messaging();
+          messaging.useServiceWorker(registration);
+
+          // Ask for notification permission after registration
+          if (Notification.permission === "default") {
+            const permission = await Notification.requestPermission();
+            console.log("🔔 Notification permission:", permission);
+            if (permission === "granted") {
+              const token = await messaging.getToken({
+                vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
+              });
+              console.log("✅ FCM token:", token);
+              // Optionally send it to your backend
+            }
+          }
+        })
+        .catch((err) => console.error("❌ Service Worker failed to register:", err));
     }
+
 
     // Messages per theme
     const messages = {
@@ -295,31 +319,52 @@
 
     // === Register token + user frequency ===
     async function saveUserSettings(token, frequency) {
-      await fetch("https://us-central1-benestarpwa.cloudfunctions.net/registerUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, frequency })
-      });
+      try {
+        await fetch("https://us-central1-benestarpwa.cloudfunctions.net/registerUser", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, frequency })
+        });
+        console.log("✅ User settings saved:", frequency);
+      } catch (err) {
+        console.error("❌ Failed to save user settings:", err);
+      }
     }
 
-    // === On load ===
-    window.addEventListener("load", async () => {
-      if (Notification.permission === "default") {
-        await Notification.requestPermission();
-      }
+    // === Register Service Worker + Request Notification Permission ===
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("./firebase-messaging-sw.js", { scope: "./" })
+        .then(async (registration) => {
+          console.log("✅ Service Worker registered:", registration);
 
-      if (Notification.permission === "granted") {
-        const token = await messaging.getToken({
-          vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
-        });
+          // Initialize Firebase messaging bound to this SW
+          const messaging = firebase.messaging();
+          messaging.useServiceWorker(registration);
 
-        const freq = parseInt(document.getElementById("freqSelect").value);
-        await saveUserSettings(token, freq);
-      }
+          // Ask for permission *after* SW is ready
+          if (Notification.permission === "default") {
+            const permission = await Notification.requestPermission();
+            console.log("🔔 Permission result:", permission);
+          }
 
-      updateMessage();
-      restartLoop();
-    });
+          // If granted, get token and save settings
+          if (Notification.permission === "granted") {
+            const token = await messaging.getToken({
+              vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
+            });
+
+            console.log("✅ FCM Token:", token);
+            const freq = parseInt(document.getElementById("freqSelect").value);
+            await saveUserSettings(token, freq);
+          }
+
+          updateMessage();
+          restartLoop();
+        })
+        .catch((err) => console.error("❌ Service Worker registration failed:", err));
+    }
+
 
   </script>
 
