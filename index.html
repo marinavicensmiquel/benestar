@@ -37,71 +37,64 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js"></script>
 
   <script>
-    const log = (msg) => {
-      console.log(msg);
-      document.getElementById("log").textContent += "\n" + msg;
-    };
+  const log = (msg) => {
+    console.log(msg);
+    document.getElementById("log").textContent += "\n" + msg;
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyARM97493F50pd_QXhR6vRKIn897Q9yKQc",
-      authDomain: "benestarpwa.firebaseapp.com",
-      projectId: "benestarpwa",
-      storageBucket: "benestarpwa.appspot.com",
-      messagingSenderId: "487141570676",
-      appId: "1:487141570676:web:83af17edc0d0d0b6b5b921"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyARM97493F50pd_QXhR6vRKIn897Q9yKQc",
+    authDomain: "benestarpwa.firebaseapp.com",
+    projectId: "benestarpwa",
+    storageBucket: "benestarpwa.appspot.com",
+    messagingSenderId: "487141570676",
+    appId: "1:487141570676:web:83af17edc0d0d0b6b5b921"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
 
-    // Register the Firebase service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("./firebase-messaging-sw.js", { scope: "./" })
-        .then((reg) => log("🧩 Service Worker registered: " + reg.scope))
-        .catch((err) => log("❌ Service Worker registration failed: " + err));
-    } else {
-      log("🚫 Service Workers not supported in this browser.");
+  // Register Firebase service worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("./firebase-messaging-sw.js", { scope: "./" })
+      .then((reg) => log("🧩 Service Worker registered: " + reg.scope))
+      .catch((err) => log("❌ SW registration failed: " + err));
+  }
+
+  async function requestPermission() {
+    log("📨 Requesting notification permission...");
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      log("⚠️ Permission denied.");
+      return;
     }
 
-    // Ask for permission and subscribe to topic "all"
-    async function requestPermission() {
-      log("📨 Requesting notification permission...");
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        try {
-          const token = await messaging.getToken({
-            vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
-          });
-          log("✅ FCM Token obtained:\n" + token);
-
-          // Subscribe to topic "all"
-          await fetch(`https://iid.googleapis.com/iid/v1/${token}/rel/topics/all`, {
-            method: "POST",
-            headers: {
-              "Authorization": "key=AAAAH5poKng:APA91bFi_nwOoC1iGl_rMI7J5P9M6y00C6PkpqZboUVyqeqhCSw4DVaX-OfTeH83ue-GnDW2MBz4R9d6Pj5bKJepA6Hi6cKf_X2RGeV66iuwvTE7WbULlT",
-              "Content-Type": "application/json"
-            }
-          });
-
-          log("📡 Subscribed to topic 'all' successfully.");
-          alert("Notifications activated! You will now receive reminders.");
-        } catch (err) {
-          log("❌ Error getting token: " + err.message);
-        }
-      } else {
-        log("⚠️ Permission denied. Enable notifications manually.");
-      }
-    }
-
-    // Foreground notifications
-    messaging.onMessage((payload) => {
-      log("📩 Notification received (foreground): " + JSON.stringify(payload));
-      new Notification(payload.notification.title, {
-        body: payload.notification.body,
-        icon: payload.notification.icon || "icon-192.png",
+    try {
+      const token = await messaging.getToken({
+        vapidKey: "BCmbjjP84nLgeIpyqqhfy58e32dVpmnCn0o7-rAWHIPgDBH6rCFp95lU1nvETH94eMoPbcUZlQzuVWzHs9JZX9s"
       });
+      log("✅ Token obtained:\n" + token);
+
+      // Securely subscribe token to "all" via your backend (no API key in frontend)
+      const res = await fetch(`https://us-central1-benestarpwa.cloudfunctions.net/subscribeToAll?token=${token}`);
+      const data = await res.json();
+      log("📡 Subscription response: " + JSON.stringify(data));
+
+      alert("✅ Notifications activated! You’ll now receive reminders.");
+    } catch (err) {
+      log("❌ Token error: " + err.message);
+    }
+  }
+
+  messaging.onMessage((payload) => {
+    log("📩 Notification received: " + JSON.stringify(payload));
+    new Notification(payload.notification.title, {
+      body: payload.notification.body,
+      icon: payload.notification.icon || "icon-192.png",
     });
-  </script>
+  });
+</script>
 </body>
 </html>
