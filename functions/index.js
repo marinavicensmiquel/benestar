@@ -1,22 +1,27 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const cors = require("cors")({ origin: true });
+
 admin.initializeApp();
 
-// ✅ Securely subscribe a client token to the topic "all"
-exports.subscribeToAll = functions.https.onRequest(async (req, res) => {
-  const token = req.query.token;
-  if (!token) return res.status(400).json({ success: false, error: "Missing token" });
+exports.subscribeToAll = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const token = req.query.token || req.body?.token;
+    if (!token) {
+      return res.status(400).json({ success: false, error: "No token provided" });
+    }
 
-  try {
-    await admin.messaging().subscribeToTopic(token, "all");
-    res.json({ success: true, message: "Subscribed to topic 'all'" });
-  } catch (err) {
-    console.error("❌ Error subscribing to topic:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+    try {
+      await admin.messaging().subscribeToTopic(token, "all");
+      console.log(`✅ Subscribed ${token} to topic 'all'`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("❌ Error subscribing to topic:", error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
 });
 
-// ✅ Existing endpoint — sends notification to all subscribed tokens
 exports.sendNotification = functions.https.onRequest(async (req, res) => {
   const { title = "Benestar Reminder", body = "It’s time for your wellbeing check 🌿", icon = "icon-192.png" } = req.body || {};
 
